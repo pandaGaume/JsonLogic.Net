@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31129.286
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlueForest.JsonLogic", "BlueForest.JsonLogic\BlueForest.JsonLogic.csproj", "{71EF9A91-2F15-4411-9D49-07E0D4CCE63A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlueForest.JsonLogic.Cli", "BlueForest.JsonLogic.Cli\BlueForest.JsonLogic.Cli.csproj", "{696D8F18-A42B-4430-ACA2-D63ECC44468D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Hosts", "Hosts", "{ACCFF0D5-CB96-4247-B628-DC54C6BFD5B1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{71EF9A91-2F15-4411-9D49-07E0D4CCE63A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{71EF9A91-2F15-4411-9D49-07E0D4CCE63A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{71EF9A91-2F15-4411-9D49-07E0D4CCE63A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{71EF9A91-2F15-4411-9D49-07E0D4CCE63A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{696D8F18-A42B-4430-ACA2-D63ECC44468D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{696D8F18-A42B-4430-ACA2-D63ECC44468D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{696D8F18-A42B-4430-ACA2-D63ECC44468D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{696D8F18-A42B-4430-ACA2-D63ECC44468D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{696D8F18-A42B-4430-ACA2-D63ECC44468D} = {ACCFF0D5-CB96-4247-B628-DC54C6BFD5B1}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9EF69EB3-0E65-4C55-A0B1-89D444A86BD0}
+	EndGlobalSection
+EndGlobal
