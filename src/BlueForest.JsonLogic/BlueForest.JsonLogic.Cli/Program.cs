@@ -28,11 +28,11 @@ namespace BlueForest.JsonLogic.Cli
         static void Main(string[] args)
         {
             // Create a lambda expression. 
-            Expression<Func<Data,int>> le = JsonLogic.Parse<Data,int>(jsonAdd);
+            var le = JsonLogic.Parse<Data>(jsonAnd);
             // Compile the lambda expression.
-            Func<Data, int> compiledExpression = le.Compile();
+            var compiledExpression = le.Compile();
             // Execute the lambda expression.  
-            int result = compiledExpression(new Data(2,3, new Data(1,2)));
+            var result = compiledExpression(new Data(2,3, new Data(1,2)));
             // Display the result.  
             Console.WriteLine(result);
         }
