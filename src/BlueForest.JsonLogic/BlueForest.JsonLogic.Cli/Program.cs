@@ -24,7 +24,7 @@ namespace BlueForest.JsonLogic.Cli
     public static class Program
     {
         const string jsonAnd = "{\"and\":[{\"==\":[{\"+\":[{\"var\":\"A\"}, {\"var\":\"B\"}]},4]},{\"==\":[2, 2]}]}";
-        const string jsonAdd = "{\"+\":[{\"var\":\"A\"}, {\"var\":\"Nested.A\"}]}";
+        const string jsonAdd = "{\"+\":[{\"var\":\"A\"}, {\"var\":\"Nested.B\"}]}";
         static void Main(string[] args)
         {
             // Create a lambda expression. 

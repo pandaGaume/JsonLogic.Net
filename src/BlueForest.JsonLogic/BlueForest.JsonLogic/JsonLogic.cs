@@ -6,34 +6,65 @@ using System.Text.Json;
 
 namespace BlueForest.JsonLogic
 {
+    using OpFactory = Func<IList<Expression>, Expression>;
+    using OpRegistry = Dictionary<string, Func<IList<Expression>, Expression>>;
+
     public class JsonLogicException : Exception
     {
         public JsonLogicException(string mess = null) : base(mess) { }
         public JsonLogicException(string mess, params object[] args) : base(mess != null ? string.Format(mess, args) : null) { }
     }
 
+    public class JsonLogicOptions
+    {
+        public OpRegistry CustomFactories { get; set; }
+        public IDictionary<string,string> Aliases { get; set; }
+    }
+
     public class JsonLogic
     {
-        public static Expression<Func<DataT, object>> Parse<DataT>(string jsonStr)
+        internal static OpRegistry KnownOpFactories = new OpRegistry()
         {
-            return Parse<DataT>(Encoding.UTF8.GetBytes(jsonStr));
-        }
-        public static Expression<Func<DataT, object>> Parse<DataT>(ReadOnlySpan<byte> jsonData)
+            { "and", JsonLogicOperator.And                  },
+            { "or" , JsonLogicOperator.Or                   },
+            { "==" , JsonLogicOperator.Equal                },
+            { "!=" , JsonLogicOperator.NotEqual             },
+            { "<"  , JsonLogicOperator.LessThan             },
+            { "<=" , JsonLogicOperator.LessThanOrEqual      },
+            { ">"  , JsonLogicOperator.GreaterThan          },
+            { ">=" , JsonLogicOperator.GreaterThanOrEqual   },
+            { "+"  , JsonLogicOperator.Add                  },
+            { "+=" , JsonLogicOperator.AddAssign            },
+            { "-"  , JsonLogicOperator.Subtract             },
+            { "-=" , JsonLogicOperator.SubtractAssign       },
+            { "*"  , JsonLogicOperator.Multiply             },
+            { "*=" , JsonLogicOperator.MultiplyAssign       },
+            { "/"  , JsonLogicOperator.Divide               },
+            { "/=" , JsonLogicOperator.DivideAssign         },
+            { "%"  , JsonLogicOperator.Modulo               },
+            { "%=" , JsonLogicOperator.ModuloAssign         }
+        };
+
+        public static Expression<Func<DataT, object>> Parse<DataT>(string jsonStr, JsonLogicOptions options = null)
         {
-            return Parse<DataT, Object>(jsonData);
+            return Parse<DataT>(Encoding.UTF8.GetBytes(jsonStr), options);
         }
-        public static Expression<Func<DataT, ReturnT>> Parse<DataT,ReturnT>(string jsonStr)
+        public static Expression<Func<DataT, object>> Parse<DataT>(ReadOnlySpan<byte> jsonData, JsonLogicOptions options = null)
         {
-            return Parse<DataT,ReturnT> (Encoding.UTF8.GetBytes(jsonStr));
+            return Parse<DataT, Object>(jsonData, options);
         }
-        public static Expression<Func<DataT, ReturnT>> Parse<DataT,ReturnT>(ReadOnlySpan<byte> jsonData)
+        public static Expression<Func<DataT, ReturnT>> Parse<DataT,ReturnT>(string jsonStr, JsonLogicOptions options = null)
+        {
+            return Parse<DataT,ReturnT> (Encoding.UTF8.GetBytes(jsonStr), options);
+        }
+        public static Expression<Func<DataT, ReturnT>> Parse<DataT,ReturnT>(ReadOnlySpan<byte> jsonData, JsonLogicOptions options = null)
         {
             var reader = new Utf8JsonReader(jsonData);
             if (!reader.Read()) throw new JsonException();
             var type = Expression.Parameter(typeof(DataT), "t");
-            return Expression.Lambda<Func<DataT, ReturnT>>(Expression.Convert(Parse(ref reader, type), typeof(ReturnT)), type);
+            return Expression.Lambda<Func<DataT, ReturnT>>(Expression.Convert(Parse(ref reader, type, options), typeof(ReturnT)), type);
         }
-        internal static Expression Parse(ref Utf8JsonReader reader, ParameterExpression parameter)
+        internal static Expression Parse(ref Utf8JsonReader reader, ParameterExpression parameter, JsonLogicOptions options = null)
         {
             Expression exp = default;
             switch (reader.TokenType)
@@ -41,7 +72,11 @@ namespace BlueForest.JsonLogic
                 case JsonTokenType.StartObject:
                     {
                         if (!reader.Read() || reader.TokenType != JsonTokenType.PropertyName) throw new JsonException();
-                        var opName = reader.GetString()?.Trim();
+                        var opName = reader.GetString()?.Trim()?.ToLower();
+                        if(options?.Aliases != null && options.Aliases.TryGetValue(opName, out string alias))
+                        {
+                            opName = alias;
+                        }
                         if (!reader.Read()) throw new JsonException();
                         switch (reader.TokenType)
                         {
@@ -50,125 +85,19 @@ namespace BlueForest.JsonLogic
                                     // this migh be an expression of type { operation : [params...] }
                                     // parse each array item as expression 
                                     var values = ParseArray(ref reader, parameter);
-                                    switch (opName)
+
+                                    // retreive standard operation
+                                    if ( KnownOpFactories.TryGetValue(opName, out OpFactory factory))
                                     {
-                                        case "and":
-                                            {
-                                                if (values.Count < 2) throw new JsonLogicException();
-                                                exp = Expression.AndAlso(values[0], values[1]);
-                                                for (int i = 2; i != values.Count; i++)
-                                                {
-                                                    exp = Expression.AndAlso(exp, values[i]);
-                                                }
-                                                break;
-                                            }
-                                        case "or":
-                                            {
-                                                if (values.Count < 2) throw new JsonLogicException();
-                                                exp = Expression.Or(values[0], values[1]);
-                                                for (int i = 2; i != values.Count; i++)
-                                                {
-                                                    exp = Expression.Or(exp, values[i]);
-                                                }
-                                                break;
-                                            }
-                                        case "==":
-                                            {
-                                                if (values.Count < 2) throw new JsonLogicException();
-                                                exp = Expression.Equal(values[0], values[1]);
-                                                break;
-                                            }
-                                        case "!=":
-                                            {
-                                                if (values.Count < 2) throw new JsonLogicException();
-                                                exp = Expression.NotEqual(values[0], values[1]);
-                                                break;
-                                            }
-                                        case "<":
-                                            {
-                                                if (values.Count < 2) throw new JsonLogicException();
-                                                exp = Expression.LessThan(values[0], values[1]);
-                                                break;
-                                            }
-                                        case "<=":
-                                            {
-                                                if (values.Count < 2) throw new JsonLogicException();
-                                                exp = Expression.LessThanOrEqual(values[0], values[1]);
-                                                break;
-                                            }
-                                        case ">":
-                                            {
-                                                if (values.Count < 2) throw new JsonLogicException();
-                                                exp = Expression.GreaterThan(values[0], values[1]);
-                                                break;
-                                            }
-                                        case ">=":
-                                            {
-                                                if (values.Count < 2) throw new JsonLogicException();
-                                                exp = Expression.GreaterThanOrEqual(values[0], values[1]);
-                                                break;
-                                            }
-                                        case "+":
-                                            {
-                                                if (values.Count < 2) throw new JsonLogicException();
-                                                exp = Expression.AddChecked(values[0], values[1]);
-                                                break;
-                                            }
-                                        case "+=":
-                                            {
-                                                if (values.Count < 2) throw new JsonLogicException();
-                                                exp = Expression.AddAssignChecked(values[0], values[1]);
-                                                break;
-                                            }
-                                        case "-":
-                                            {
-                                                if (values.Count < 2) throw new JsonLogicException();
-                                                exp = Expression.SubtractChecked(values[0], values[1]);
-                                                break;
-                                            }
-                                        case "-=":
-                                            {
-                                                if (values.Count < 2) throw new JsonLogicException();
-                                                exp = Expression.SubtractAssignChecked(values[0], values[1]);
-                                                break;
-                                            }
-                                        case "*":
-                                            {
-                                                if (values.Count < 2) throw new JsonLogicException();
-                                                exp = Expression.MultiplyChecked(values[0], values[1]);
-                                                break;
-                                            }
-                                        case "*=":
-                                            {
-                                                if (values.Count < 2) throw new JsonLogicException();
-                                                exp = Expression.MultiplyAssignChecked(values[0], values[1]);
-                                                break;
-                                            }
-                                        case "/":
-                                            {
-                                                if (values.Count < 2) throw new JsonLogicException();
-                                                exp = Expression.Divide(values[0], values[1]);
-                                                break;
-                                            }
-                                        case "/=":
-                                            {
-                                                if (values.Count < 2) throw new JsonLogicException();
-                                                exp = Expression.DivideAssign(values[0], values[1]);
-                                                break;
-                                            }
-                                        case "%":
-                                            {
-                                                if (values.Count < 2) throw new JsonLogicException();
-                                                exp = Expression.Modulo(values[0], values[1]);
-                                                break;
-                                            }
-                                        case "%=":
-                                            {
-                                                if (values.Count < 2) throw new JsonLogicException();
-                                                exp = Expression.ModuloAssign(values[0], values[1]);
-                                                break;
-                                            }
-                                        default: throw new JsonLogicException("Operator '{}' not supported", opName);
+                                        exp = factory?.Invoke(values);
+                                    }
+                                    // then try to retreive custom operation if not found
+                                    if (exp == default && options?.CustomFactories != null)
+                                    {
+                                        if (options.CustomFactories.TryGetValue(opName, out factory))
+                                        {
+                                            exp = factory?.Invoke(values);
+                                        }
                                     }
                                     break;
                                 }
