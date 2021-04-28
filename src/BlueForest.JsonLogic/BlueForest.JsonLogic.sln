@@ -5,9 +5,11 @@ VisualStudioVersion = 16.0.31129.286
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlueForest.JsonLogic", "BlueForest.JsonLogic\BlueForest.JsonLogic.csproj", "{71EF9A91-2F15-4411-9D49-07E0D4CCE63A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlueForest.JsonLogic.Cli", "BlueForest.JsonLogic.Cli\BlueForest.JsonLogic.Cli.csproj", "{696D8F18-A42B-4430-ACA2-D63ECC44468D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlueForest.JsonLogic.Cli", "BlueForest.JsonLogic.Cli\BlueForest.JsonLogic.Cli.csproj", "{696D8F18-A42B-4430-ACA2-D63ECC44468D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Hosts", "Hosts", "{ACCFF0D5-CB96-4247-B628-DC54C6BFD5B1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlueForest.JsonLogic.XUnitTest", "BlueForest.JsonLogic.XUnitTest\BlueForest.JsonLogic.XUnitTest.csproj", "{33B4C3DC-2F0B-4910-8511-8ED6D805BFBC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,6 +25,10 @@ Global
 		{696D8F18-A42B-4430-ACA2-D63ECC44468D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{696D8F18-A42B-4430-ACA2-D63ECC44468D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{696D8F18-A42B-4430-ACA2-D63ECC44468D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{33B4C3DC-2F0B-4910-8511-8ED6D805BFBC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{33B4C3DC-2F0B-4910-8511-8ED6D805BFBC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{33B4C3DC-2F0B-4910-8511-8ED6D805BFBC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{33B4C3DC-2F0B-4910-8511-8ED6D805BFBC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

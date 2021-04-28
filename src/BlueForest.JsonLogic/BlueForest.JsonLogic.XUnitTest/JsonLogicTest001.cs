@@ -1,7 +1,7 @@
-﻿using System;
-using System.Linq.Expressions;
+using System;
+using Xunit;
 
-namespace BlueForest.JsonLogic.Cli
+namespace BlueForest.JsonLogic.XUnitTest
 {
     internal class TestSample
     {
@@ -24,10 +24,12 @@ namespace BlueForest.JsonLogic.Cli
         public double Double;
         public TestData Nested;
     }
-    public static class Program
+
+    public class JsonLogicTest001
     {
         static int[] ArrayOfIntegers = { 1, 2, 3, 4, 5, 6 };
         static double[] ArrayOfDoubles = { 1, 2, 3, 4, 5, 6 };
+
         static TestSample[] Samples =
         {
             new TestSample(@"{""var"": 0}",ArrayOfIntegers , 1),
@@ -41,52 +43,53 @@ namespace BlueForest.JsonLogic.Cli
             new TestSample(@"{""=="": [5, {""var"":4}]}",ArrayOfDoubles  ,true),
             new TestSample(@"{""=="": [5, {""var"":0}]}",ArrayOfIntegers  ,false),
             new TestSample(@"{""+"": [5,{""var"":0}]}",ArrayOfIntegers  , 6),
-            new TestSample(@"{""min"": [ 1, 2, 3, -12, 5, 6 ]}",null , -12),
+            new TestSample(@"{""min"": [ 1, 2, 3, 12, 5, 6 ]}",null , 1),
             new TestSample(@"{""max"": [ 1, 2, 3, 12, 5, 6 ]}",null , 12),
             new TestSample(@"{""min"": [{""var"":""""}]}",ArrayOfDoubles , 1),
             new TestSample(@"{""max"": [{""var"":""""}]}",ArrayOfIntegers , 6),
             new TestSample(@"{""max"": [{""var"":[""""]}]}",ArrayOfIntegers , 6),
-            new TestSample(@"{""some"": [[""banana"", ""orange""],{""=="":[{""var"":""""},""orange""]}]}",null , true),
+            new TestSample(@"{""some"": [[""banana"", ""orange""],{""=="":[{""var"":""""},""banana""]}]}",null , true),
+            new TestSample(@"{""some"": [[""banana"", ""orange""],{""=="":[{""var"":""""},""apple""]}]}",null , false),
             new TestSample(@"{""some"": [[1, 2],{""=="":[{""var"":""""},1]}]}",null , true),
             new TestSample(@"{""some"": [[1, 2],{""=="":[{""var"":""""},3]}]}",null , false),
             new TestSample(@"{""some"": [{""var"":""""},{""=="":[{""var"":""""},6]}]}",ArrayOfDoubles , true),
             new TestSample(@"{""all"": [{""var"":""""},{""<="":[{""var"":""""},6]}]}",ArrayOfDoubles , true),
             new TestSample(@"{""all"": [{""var"":""""},{""<"":[{""var"":""""},4]}]}",ArrayOfDoubles , false)
+        };
 
-       };
-        static void Main(string[] args)
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        [InlineData(2)]
+        [InlineData(3)]
+        [InlineData(4)]
+        [InlineData(5)]
+        [InlineData(6)]
+        [InlineData(7)]
+        [InlineData(8)]
+        [InlineData(9)]
+        [InlineData(10)]
+        [InlineData(11)]
+        [InlineData(12)]
+        [InlineData(13)]
+        [InlineData(14)]
+        [InlineData(15)]
+        [InlineData(16)]
+        [InlineData(17)]
+        [InlineData(18)]
+        [InlineData(19)]
+        [InlineData(20)]
+        [InlineData(21)]
+        public void Test(int testIndex)
         {
-            var sample = Samples[21];
+            var sample = Samples[testIndex];
             // Create a lambda expression. 
-            var le = JsonLogic.Parse(sample.Logic, sample.Data?.GetType());
+            var lambdaExpr = JsonLogic.Parse(sample.Logic, sample.Data?.GetType());
             // Compile the lambda expression.
-            var compiledExpression = le.Compile();
+            var compiledExpression = lambdaExpr.Compile();
             // Execute the lambda expression.  
             var result = compiledExpression.DynamicInvoke(sample.Data);
-            // Display the result.  
-            Console.WriteLine(result);
+            Assert.Equal(Convert.ChangeType(sample.TheoricalResult, result.GetType()), result);
         }
     }
 }
-/*
-var indexVariable = Expression.Variable(typeof(int), "index");
-var arrayValue = Expression.Variable(etype, "value");
-var result = Expression.Variable(etype, "result");
-var lengthExp = Expression.Property(array, typeof(Array).GetPublicInstanceDeclaredOnlyReadProperty(nameof(Array.Length))!);
-
-return Expression.Block(
-    new[] { indexVariable, arrayValue, result },
-    Expression.Assign(result, Expression.ArrayIndex(array, Expression.Constant(0))),
-    ExpressionHelpers.For(
-        Expression.Assign(indexVariable, Expression.Constant(0)),
-        Expression.LessThan(indexVariable, lengthExp),
-        Expression.PostIncrementAssign(indexVariable),
-        Expression.Block(
-           Expression.Assign(arrayValue, Expression.ArrayIndex(array, indexVariable)),
-           Expression.IfThenElse(Expression.LessThan(result, arrayValue),
-                                  Expression.Assign(result, op ? arrayValue : result),
-                                  Expression.Assign(result, op ? result : arrayValue))
-        )
-    ),
-    result);
-*/
