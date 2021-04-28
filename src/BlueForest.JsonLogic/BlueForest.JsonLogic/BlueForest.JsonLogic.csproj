@@ -2,6 +2,15 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Company>DotVision</Company>
+    <Authors>Guillaume Pelletier</Authors>
+    <Copyright>DotVision</Copyright>
+    <PackageLicenseFile></PackageLicenseFile>
+    <PackageReleaseNotes>Initial release</PackageReleaseNotes>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageTags>json, jsonlogic to expression tree</PackageTags>
+    <Description>.Net Core implementation of JsonLogic using system.text.json library and Expression Tree.</Description>
   </PropertyGroup>
 
 </Project>

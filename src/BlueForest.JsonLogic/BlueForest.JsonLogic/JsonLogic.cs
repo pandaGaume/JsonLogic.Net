@@ -95,6 +95,14 @@ namespace BlueForest.JsonLogic
             { TerminalVocabulary.Any , JsonLogicOperation.Some }
         };
 
+        public static Delegate Compile(string jsonStr, Type dataType, JsonLogicOptions options = null) => Parse<object>(Encoding.UTF8.GetBytes(jsonStr), dataType, options).Compile();
+
+        public static Delegate Compile<ReturnT>(string jsonStr, Type dataType, JsonLogicOptions options = null) => Parse<ReturnT>(Encoding.UTF8.GetBytes(jsonStr), dataType, options).Compile();
+
+        public static Delegate Compile(ReadOnlySpan<byte> jsonData, Type dataType, JsonLogicOptions options = null) => Parse<object>(jsonData, dataType, options).Compile();
+
+        public static Delegate Compile<ReturnT>(ReadOnlySpan<byte> jsonData, Type dataType, JsonLogicOptions options = null)=> Parse<ReturnT>(jsonData, dataType, options).Compile();
+
         public static LambdaExpression Parse(string jsonStr, Type dataType, JsonLogicOptions options = null)=> Parse<object>(Encoding.UTF8.GetBytes(jsonStr), dataType, options);
 
         public static LambdaExpression Parse<ReturnT>(string jsonStr, Type dataType,JsonLogicOptions options = null)=> Parse<ReturnT>(Encoding.UTF8.GetBytes(jsonStr), dataType, options);

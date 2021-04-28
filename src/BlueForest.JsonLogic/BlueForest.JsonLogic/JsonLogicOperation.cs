@@ -199,9 +199,11 @@ namespace BlueForest.JsonLogic
                          label)
                     ),
                     Expression.Catch(
-                        exception
+                        exception,
 #if DEBUG
-                        , ExpressionHelpers.DebugExpression(exception)
+                        ExpressionHelpers.DebugExpression(exception)
+#else
+                        Expression.Throw(exception)
 #endif
                    )
                 ),
@@ -255,9 +257,11 @@ namespace BlueForest.JsonLogic
                          label)
                     ),
                     Expression.Catch(
-                        exception
+                        exception,
 #if DEBUG
-                        ,ExpressionHelpers.DebugExpression(exception)
+                        ExpressionHelpers.DebugExpression(exception)
+#else
+                        Expression.Throw(exception)
 #endif
                    )
                 ),

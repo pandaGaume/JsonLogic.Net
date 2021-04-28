@@ -75,10 +75,9 @@ namespace BlueForest.JsonLogic.Cli
         static void Main(string[] args)
         {
             var sample = Samples[21];
-            // Create a lambda expression. 
-            var le = JsonLogic.Parse(sample.Logic, sample.Data?.GetType());
+ 
             // Compile the lambda expression.
-            var compiledExpression = le.Compile();
+            var compiledExpression = JsonLogic.Compile(sample.Logic, sample.Data?.GetType());
             // Execute the lambda expression.  
             var result = compiledExpression.DynamicInvoke(sample.Data);
             // Display the result.  
