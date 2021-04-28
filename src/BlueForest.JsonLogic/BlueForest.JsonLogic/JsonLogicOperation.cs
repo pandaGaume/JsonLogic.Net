@@ -2,13 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 
 namespace BlueForest.JsonLogic
 {
-    public class JsonLogicOperator
+    public class JsonLogicOperation
     {
-        public static Expression And(IList<Expression> values, Stack<Expression> parameters = null)
+        public static Expression And(IList<Expression> values, Stack<Expression> stack = null, JsonLogicOptions options = null)
         {
             if (values.Count < 2) throw new JsonLogicException();
             Expression exp = Expression.AndAlso(values[0], values[1]);
@@ -18,7 +17,7 @@ namespace BlueForest.JsonLogic
             }
             return exp;
         }
-        public static Expression Or(IList<Expression> values, Stack<Expression> parameters = null)
+        public static Expression Or(IList<Expression> values, Stack<Expression> stack = null, JsonLogicOptions options = null)
         {
             if (values.Count < 2) throw new JsonLogicException();
             Expression exp = Expression.Or(values[0], values[1]);
@@ -28,7 +27,7 @@ namespace BlueForest.JsonLogic
             }
             return exp;
         }
-        public static Expression Equal(IList<Expression> values, Stack<Expression> parameters = null)
+        public static Expression Equal(IList<Expression> values, Stack<Expression> stack = null, JsonLogicOptions options = null)
         {
             if (values.Count < 2) throw new JsonLogicException();
             if (values[0].Type.IsNumericType())
@@ -37,7 +36,7 @@ namespace BlueForest.JsonLogic
             }
             return Expression.Equal(values[0], values[1]);
         }
-        public static Expression NotEqual(IList<Expression> values, Stack<Expression> parameters = null)
+        public static Expression NotEqual(IList<Expression> values, Stack<Expression> stack = null, JsonLogicOptions options = null)
         {
             if (values.Count < 2) throw new JsonLogicException();
             if (values[0].Type.IsNumericType())
@@ -46,7 +45,7 @@ namespace BlueForest.JsonLogic
             }
             return Expression.NotEqual(values[0], values[1]);
         }
-        public static Expression LessThan(IList<Expression> values, Stack<Expression> parameters = null)
+        public static Expression LessThan(IList<Expression> values, Stack<Expression> stack = null, JsonLogicOptions options = null)
         {
             if (values.Count < 2) throw new JsonLogicException();
             if (values.Count == 2)
@@ -62,7 +61,7 @@ namespace BlueForest.JsonLogic
             var b = Expression.LessThan(v1, v2);
             return Expression.And(a, b);
         }
-        public static Expression LessThanOrEqual(IList<Expression> values, Stack<Expression> parameters = null)
+        public static Expression LessThanOrEqual(IList<Expression> values, Stack<Expression> stack = null, JsonLogicOptions options = null)
         {
             if (values.Count < 2) throw new JsonLogicException();
             if (values.Count == 2)
@@ -78,50 +77,50 @@ namespace BlueForest.JsonLogic
             var b = Expression.LessThanOrEqual(v1, v2);
             return Expression.And(a, b);
         }
-        public static Expression GreaterThan(IList<Expression> values, Stack<Expression> parameters = null)
+        public static Expression GreaterThan(IList<Expression> values, Stack<Expression> stack = null, JsonLogicOptions options = null)
         {
             if (values.Count < 2) throw new JsonLogicException();
             return Expression.GreaterThan(values[0], values[1]);
         }
-        public static Expression GreaterThanOrEqual(IList<Expression> values, Stack<Expression> parameters = null)
+        public static Expression GreaterThanOrEqual(IList<Expression> values, Stack<Expression> stack = null, JsonLogicOptions options = null)
         {
             if (values.Count < 2) throw new JsonLogicException();
             return Expression.GreaterThanOrEqual(values[0].EnsureJsonNumber(), values[1].EnsureJsonNumber());
         }
-        public static Expression Add(IList<Expression> values, Stack<Expression> parameters = null)
+        public static Expression Add(IList<Expression> values, Stack<Expression> stack = null, JsonLogicOptions options = null)
         {
             if (values.Count < 2) throw new JsonLogicException();
             return Expression.AddChecked(values[0].EnsureJsonNumber(), values[1].EnsureJsonNumber());
         }
-        public static Expression Subtract(IList<Expression> values, Stack<Expression> parameters = null)
+        public static Expression Subtract(IList<Expression> values, Stack<Expression> stack = null, JsonLogicOptions options = null)
         {
             if (values.Count < 2) throw new JsonLogicException();
             return Expression.SubtractChecked(values[0].EnsureJsonNumber(), values[1].EnsureJsonNumber());
         }
-        public static Expression Multiply(IList<Expression> values, Stack<Expression> parameters = null)
+        public static Expression Multiply(IList<Expression> values, Stack<Expression> stack = null, JsonLogicOptions options = null)
         {
             if (values.Count < 2) throw new JsonLogicException();
             return Expression.MultiplyChecked(values[0].EnsureJsonNumber(), values[1].EnsureJsonNumber());
         }
-        public static Expression Divide(IList<Expression> values, Stack<Expression> parameters = null)
+        public static Expression Divide(IList<Expression> values, Stack<Expression> stack = null, JsonLogicOptions options = null)
         {
             if (values.Count < 2) throw new JsonLogicException();
             return Expression.Divide(values[0].EnsureJsonNumber(), values[1].EnsureJsonNumber());
         }
-        public static Expression Modulo(IList<Expression> values, Stack<Expression> parameters = null)
+        public static Expression Modulo(IList<Expression> values, Stack<Expression> stack = null, JsonLogicOptions options = null)
         {
             if (values.Count < 2) throw new JsonLogicException();
             return Expression.Modulo(values[0].EnsureJsonNumber(), values[1].EnsureJsonNumber());
         }
-        public static Expression Min(IList<Expression> values, Stack<Expression> parameters = null)
+        public static Expression Min(IList<Expression> values, Stack<Expression> stack = null, JsonLogicOptions options = null)
         {
-            return MinMax(values, false);
+            return MinMax(values, options, false);
         }
-        public static Expression Max(IList<Expression> values, Stack<Expression> parameters = null)
+        public static Expression Max(IList<Expression> values, Stack<Expression> stack = null, JsonLogicOptions options = null)
         {
-            return MinMax(values, true);
+            return MinMax(values, options, true);
         }
-        public static Expression Var(IList<Expression> values, Stack<Expression> stack = null)
+        public static Expression Var(IList<Expression> values, Stack<Expression> stack = null, JsonLogicOptions options = null)
         {
             if (values.Count < 1) throw new JsonLogicException();
             var a = values[0];
@@ -131,7 +130,7 @@ namespace BlueForest.JsonLogic
                 {
                     try
                     {
-                        return JsonLogic.GetPropertyGetter(str, stack);
+                        return JsonLogic.GetProperty(str, stack, options);
                     }
                     catch (JsonLogicException)
                     {
@@ -154,7 +153,7 @@ namespace BlueForest.JsonLogic
             }
             throw new JsonLogicException();
         }
-        public static Expression All(IList<Expression> values, Stack<Expression> parameters = null)
+        public static Expression All(IList<Expression> values, Stack<Expression> stack = null, JsonLogicOptions options = null)
         {
             if (values.Count < 2) throw new JsonLogicException();
             if (!values[0].Type.IsArray) throw new JsonLogicException();
@@ -210,7 +209,7 @@ namespace BlueForest.JsonLogic
 
             return expr;
         }
-        public static Expression Some(IList<Expression> values, Stack<Expression> parameters = null)
+        public static Expression Some(IList<Expression> values, Stack<Expression> stack = null, JsonLogicOptions options = null)
         {
             if (values.Count < 2) throw new JsonLogicException();
             if (!values[0].Type.IsArray) throw new JsonLogicException();
@@ -266,7 +265,7 @@ namespace BlueForest.JsonLogic
 
             return expr;
         }
-        private static Expression MinMax(IList<Expression> values, bool op = true)
+        private static Expression MinMax(IList<Expression> values, JsonLogicOptions options, bool op )
         {
             Expression array = default;
             Type etype = default;

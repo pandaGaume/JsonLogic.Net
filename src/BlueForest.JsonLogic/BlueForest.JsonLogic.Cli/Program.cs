@@ -17,12 +17,30 @@ namespace BlueForest.JsonLogic.Cli
         }
     }
 
+    public class Location
+    {
+        double _lat, _lon;
+        double? _ele;
+
+        Location(double lat=0, double lon=0, double? ele = null)
+        {
+            _lat = lat;
+            _lon = lon;
+            _ele = ele;
+        }
+        public double Latitude { get => _lat; set => _lat = value; }
+        public double Longitude { get => _lon; set => _lon = value; }
+        public double? Elevation { get => _ele; set => _ele = value; }
+
+    }
+
     public class TestData
     {
         public int Int;
         public float Float { get; set; }
         public double Double;
         public TestData Nested;
+        public Location Location;
     }
     public static class Program
     {

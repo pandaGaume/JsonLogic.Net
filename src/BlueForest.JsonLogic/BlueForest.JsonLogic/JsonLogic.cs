@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Text.Json;
 
 namespace BlueForest.JsonLogic
 {
-    using OpFactory = Func<IList<Expression>, Stack<Expression>, Expression>;
-    using OpRegistry = Dictionary<string, Func<IList<Expression>, Stack<Expression>, Expression>>;
+    using OpFactory = Func<IList<Expression>, Stack<Expression>, JsonLogicOptions, Expression>;
+    using OpRegistry = Dictionary<string, Func<IList<Expression>, Stack<Expression>, JsonLogicOptions, Expression>>;
 
     public class JsonLogicException : Exception
     {
@@ -18,38 +17,82 @@ namespace BlueForest.JsonLogic
 
     public class JsonLogicOptions
     {
-        public IDictionary<string,string> Aliases { get; set; }
+        public const bool RelaxCamelDefault = true;
+
+        IDictionary<string, string> _aliases = null;
+        bool _rc = RelaxCamelDefault;
+
+        /// <summary>
+        /// Aliases for operations and queries name.
+        /// </summary>
+        public IDictionary<string,string> Aliases { get=>_aliases; set=>_aliases = value; }
+
+        /// <summary>
+        /// Get/Set the Case sensitivity of property names search.
+        /// If true, properties name's are tested using the both version Uppercase and lower case of it first letter .
+        /// For example, "nested" property will be search with "nested" and "Nested"
+        /// This is usefull to keep the file json "compatible" with js and .Net naming conventions.
+        /// Default is true.
+        /// </summary>
+        public bool RelaxCamel { get => _rc; set=>_rc = value; }
     }
+
+    public static class TerminalVocabulary
+    {
+        public const string And                 = "and" ;
+        public const string Or                  = "or"  ;
+        public const string Equal               = "=="  ;
+        public const string AbsoluteEqual       = "===" ;
+        public const string NotEqual            = "!="  ;
+        public const string AbsoluteNotEqual    = "!==" ;
+        public const string LessThan            = "<"   ;
+        public const string GreaterThan         = ">"   ;
+        public const string LessThanOrEqual     = "<="  ;
+        public const string GreaterThanOrEqual  = ">="  ;
+        public const string Add                 = "+"   ;
+        public const string Subtract            = "-"   ;
+        public const string Multiply            = "*"   ;
+        public const string Divide              = "/"   ;
+        public const string Modulo              = "%"   ;
+        public const string Min                 = "min" ;
+        public const string Max                 = "max" ;
+
+        public const string Var                 = "var" ;
+        public const string All                 = "all" ;
+        public const string Some                = "some";
+        public const string Any                 = "any" ;
+    }
+
 
     public class JsonLogic
     {
-        internal static OpRegistry KnownOpFactories = new OpRegistry()
+        internal static OpRegistry KnownOpFactories = new()
         {
-            { "and", JsonLogicOperator.And                  },
-            { "or" , JsonLogicOperator.Or                   },
-            { "==" , JsonLogicOperator.Equal                },
-            { "===", JsonLogicOperator.Equal                },
-            { "!=" , JsonLogicOperator.NotEqual             },
-            { "!==", JsonLogicOperator.NotEqual             },
-            { "<"  , JsonLogicOperator.LessThan             },
-            { ">"  , JsonLogicOperator.GreaterThan          },
-            { "<="  , JsonLogicOperator.LessThanOrEqual     },
-            { ">="  , JsonLogicOperator.GreaterThanOrEqual  },
-            { "+"  , JsonLogicOperator.Add                  },
-            { "-"  , JsonLogicOperator.Subtract             },
-            { "*"  , JsonLogicOperator.Multiply             },
-            { "/"  , JsonLogicOperator.Divide               },
-            { "%"  , JsonLogicOperator.Modulo               },
-            { "var", JsonLogicOperator.Var                  },
-            { "min", JsonLogicOperator.Min                  },
-            { "max", JsonLogicOperator.Max                  }
+            { TerminalVocabulary.And                , JsonLogicOperation.And                  },
+            { TerminalVocabulary.Or                 , JsonLogicOperation.Or                   },
+            { TerminalVocabulary.Equal              , JsonLogicOperation.Equal                },
+            { TerminalVocabulary.AbsoluteEqual      , JsonLogicOperation.Equal                },
+            { TerminalVocabulary.NotEqual           , JsonLogicOperation.NotEqual             },
+            { TerminalVocabulary.AbsoluteNotEqual   , JsonLogicOperation.NotEqual             },
+            { TerminalVocabulary.LessThan           , JsonLogicOperation.LessThan             },
+            { TerminalVocabulary.GreaterThan        , JsonLogicOperation.GreaterThan          },
+            { TerminalVocabulary.LessThanOrEqual    , JsonLogicOperation.LessThanOrEqual      },
+            { TerminalVocabulary.GreaterThanOrEqual , JsonLogicOperation.GreaterThanOrEqual   },
+            { TerminalVocabulary.Add                , JsonLogicOperation.Add                  },
+            { TerminalVocabulary.Subtract           , JsonLogicOperation.Subtract             },
+            { TerminalVocabulary.Multiply           , JsonLogicOperation.Multiply             },
+            { TerminalVocabulary.Divide             , JsonLogicOperation.Divide               },
+            { TerminalVocabulary.Modulo             , JsonLogicOperation.Modulo               },
+            { TerminalVocabulary.Var                , JsonLogicOperation.Var                  },
+            { TerminalVocabulary.Min                , JsonLogicOperation.Min                  },
+            { TerminalVocabulary.Max                , JsonLogicOperation.Max                  }
         };
 
-        internal static OpRegistry KnownQueryFactories = new OpRegistry()
+        internal static OpRegistry KnownQueryFactories = new()
         {
-            { "all" , JsonLogicOperator.All                 },
-            { "some", JsonLogicOperator.Some                },
-            { "any" , JsonLogicOperator.Some                }
+            { TerminalVocabulary.All , JsonLogicOperation.All  },
+            { TerminalVocabulary.Some, JsonLogicOperation.Some },
+            { TerminalVocabulary.Any , JsonLogicOperation.Some }
         };
 
         public static LambdaExpression Parse(string jsonStr, Type dataType, JsonLogicOptions options = null)=> Parse<object>(Encoding.UTF8.GetBytes(jsonStr), dataType, options);
@@ -88,21 +131,20 @@ namespace BlueForest.JsonLogic
                             case JsonTokenType.StartArray:
                                 {
                                     // this migh be an expression of type { operation : [params...] }
-                                    OpFactory factory = default;
-                                    // retreive standard operations
-                                    if (KnownOpFactories.TryGetValue(opName, out factory))
+                                    // 1 - try to get a standard operations
+                                    if (KnownOpFactories.TryGetValue(opName, out OpFactory factory))
                                     {
-                                        var values = ParseOpParameters(ref reader, stack);
-                                        exp = factory?.Invoke(values, stack);
+                                        var values = ParseOpParameters(ref reader, stack, options);
+                                        exp = factory?.Invoke(values, stack, options);
                                         break;
                                     }
-                                    // then operations on Array. We must parse it in different way, because
+                                    // 2 - Else it's operations on Array. We must parse it in different way, because
                                     // underlying predicate need ExpressionParameter to be passed instead as 
                                     // data.
                                     if (KnownQueryFactories.TryGetValue(opName, out factory))
                                     {
-                                        var values = ParseQueryParameters(ref reader, stack);
-                                        exp = factory?.Invoke(values, stack);
+                                        var values = ParseQueryParameters(ref reader, stack, options);
+                                        exp = factory?.Invoke(values, stack, options);
                                         break;
                                     }
 
@@ -113,12 +155,12 @@ namespace BlueForest.JsonLogic
                                     // using Syntactic sugar such "var"="xxx" instead as "var" = ["xxx"]
                                     switch (opName)
                                     {
-                                        case "var":
+                                        case TerminalVocabulary.Var:
                                             {
-                                                exp = GetPropertyGetter(reader.GetString(), stack);
+                                                exp = GetProperty(reader.GetString(), stack, options);
                                                 break;
                                             }
-                                        default: throw new JsonLogicException();
+                                        default: throw new JsonLogicException($"Syntax error.");
                                     }
                                     break;
                                 }
@@ -127,12 +169,12 @@ namespace BlueForest.JsonLogic
                                     // using Syntactic sugar such "var"=n instead as "var" = [n]
                                     switch (opName)
                                     {
-                                        case "var":
+                                        case TerminalVocabulary.Var:
                                             {
                                                 exp = Expression.ArrayAccess(stack.Peek(), Expression.Constant(reader.GetInt32()));
                                                 break;
                                             }
-                                        default: throw new JsonLogicException();
+                                        default: throw new JsonLogicException($"Syntax error.");
                                     }
                                     break;
                                 }
@@ -163,7 +205,7 @@ namespace BlueForest.JsonLogic
             return exp;
         }
 
-        internal static IList<Expression> ParseOpParameters(ref Utf8JsonReader reader, Stack<Expression> parameters)
+        internal static IList<Expression> ParseOpParameters(ref Utf8JsonReader reader, Stack<Expression> parameters, JsonLogicOptions options)
         {
             if (!reader.Read()) throw new JsonException();
             var l = new List<Expression>(2);
@@ -175,14 +217,14 @@ namespace BlueForest.JsonLogic
             return l;
         }
 
-        internal static IList<Expression> ParseQueryParameters(ref Utf8JsonReader reader, Stack<Expression> stack)
+        internal static IList<Expression> ParseQueryParameters(ref Utf8JsonReader reader, Stack<Expression> stack, JsonLogicOptions options)
         {
             if (!reader.Read()) throw new JsonException();
             var l = new List<Expression>(2);
             if(reader.TokenType != JsonTokenType.EndArray)
             {
                 var arrayExpr = Parse(ref reader, stack);
-                if (!arrayExpr.Type.IsArray) throw new JsonLogicException();
+                if (!arrayExpr.Type.IsArray) throw new JsonLogicException($"Querie's first parameter MUST be an array.");
                 l.Add(arrayExpr);
                 var etype = arrayExpr.Type.GetElementType();
                 if (!reader.Read()) throw new JsonException();
@@ -192,7 +234,7 @@ namespace BlueForest.JsonLogic
                 stack.Pop();
                 l.Add(predicateExpr);
                 if (!reader.Read()) throw new JsonException();
-                if (reader.TokenType != JsonTokenType.EndArray) throw new JsonLogicException();
+                if (reader.TokenType != JsonTokenType.EndArray) reader.Skip();
             }
             return l;
         }
@@ -202,19 +244,19 @@ namespace BlueForest.JsonLogic
             if (!reader.Read()) throw new JsonException();
             if(reader.TokenType != JsonTokenType.EndArray)
             {
-                switch (reader.TokenType)
+                return reader.TokenType switch
                 {
-                    case JsonTokenType.String: return ParseStringArray(ref reader);
-                    case JsonTokenType.Number: return ParseNumberArray(ref reader);
-                    default: throw new JsonLogicException("Array items must be of type string or number.");
-                }
+                    JsonTokenType.String => ParseStringArray(ref reader),
+                    JsonTokenType.Number => ParseNumberArray(ref reader),
+                    _ => throw new JsonLogicException("Array items must be of type string or number."),
+                };
             }
             return Expression.Constant(Array.Empty<object>());
         }
 
         internal static Expression ParseStringArray(ref Utf8JsonReader reader)
         {
-            List<string> list = new List<string>(8);
+            List<string> list = new(8);
             do
             {
                 if (reader.TokenType != JsonTokenType.String) throw new JsonLogicException("Array items must be of type string or number.");
@@ -226,7 +268,7 @@ namespace BlueForest.JsonLogic
 
         internal static Expression ParseNumberArray(ref Utf8JsonReader reader)
         {
-            List<double> list = new List<double>(8);
+            List<double> list = new(8);
             do
             {
                 if (reader.TokenType != JsonTokenType.Number) throw new JsonLogicException("Array items must be of type string or number.");
@@ -236,7 +278,7 @@ namespace BlueForest.JsonLogic
             return Expression.Constant(list.ToArray());
         }
 
-        internal static Expression GetPropertyGetter(string propertyName, Stack<Expression> stack)
+        internal static Expression GetProperty(string propertyName, Stack<Expression> stack, JsonLogicOptions options)
         {
             // special case where we must return the whole object
             if (string.IsNullOrEmpty(propertyName))
@@ -251,10 +293,10 @@ namespace BlueForest.JsonLogic
                 try
                 {
                     var name = parts[0];
-                    exp = Expression.PropertyOrField(e, name);
+                    exp = GetPropertyOrField(e, name, options);
                     for (int i = 1; i != parts.Length; i++)
                     {
-                        exp = Expression.PropertyOrField(exp, parts[i]);
+                        exp = GetPropertyOrField(exp, parts[i], options);
                     }
                 }
                 catch (ArgumentException)
@@ -275,6 +317,23 @@ namespace BlueForest.JsonLogic
                 return exp.EnsureJsonNumber();
             }
             return exp.Type != typeof(object) ? Expression.Convert(exp, typeof(Object)) : exp;
+        }
+
+        internal static MemberExpression GetPropertyOrField(Expression e, string name, JsonLogicOptions options)
+        {
+            try
+            {
+                return Expression.PropertyOrField(e, name);
+            }
+            catch
+            {
+                if (options?.RelaxCamel ?? JsonLogicOptions.RelaxCamelDefault)
+                {
+                    name = (Char.IsUpper(name[0]) ? Char.ToLowerInvariant(name[0]) : Char.ToUpperInvariant(name[0])) + name[1..];
+                    return Expression.PropertyOrField(e, name);
+                }
+                throw;
+            }
         }
     }
 }

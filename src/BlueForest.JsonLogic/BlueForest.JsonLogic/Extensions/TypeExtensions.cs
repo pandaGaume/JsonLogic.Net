@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BlueForest.JsonLogic
 {
@@ -24,23 +21,21 @@ namespace BlueForest.JsonLogic
         }
         internal static bool IsNumericType(this Type t)
         {
-            switch (Type.GetTypeCode(t))
+            return Type.GetTypeCode(t) switch
             {
-                case TypeCode.Double:
-                case TypeCode.Int32:
-                case TypeCode.Single:
-                case TypeCode.Byte:
-                case TypeCode.SByte:
-                case TypeCode.UInt16:
-                case TypeCode.UInt32:
-                case TypeCode.UInt64:
-                case TypeCode.Int16:
-                case TypeCode.Int64:
-                case TypeCode.Decimal:
-                    return true;
-                default:
-                    return false;
-            }
+                TypeCode.Double or 
+                TypeCode.Int32 or 
+                TypeCode.Single or 
+                TypeCode.Byte or 
+                TypeCode.SByte or 
+                TypeCode.UInt16 or 
+                TypeCode.UInt32 or 
+                TypeCode.UInt64 or 
+                TypeCode.Int16 or 
+                TypeCode.Int64 or 
+                TypeCode.Decimal => true,
+                _ => false,
+            };
         }
 
         internal static bool IsJsonNumberType(this Type t) => Type.GetTypeCode(t) == JsonNumberTypeCode;
