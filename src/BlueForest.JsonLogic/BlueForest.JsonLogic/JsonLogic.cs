@@ -66,7 +66,7 @@ namespace BlueForest.JsonLogic
 
     public class JsonLogic
     {
-        internal static OpRegistry KnownOpFactories = new()
+        internal static OpRegistry KnownOpFactories = new OpRegistry()
         {
             { TerminalVocabulary.And                , JsonLogicOperation.And                  },
             { TerminalVocabulary.Or                 , JsonLogicOperation.Or                   },
@@ -88,7 +88,7 @@ namespace BlueForest.JsonLogic
             { TerminalVocabulary.Max                , JsonLogicOperation.Max                  }
         };
 
-        internal static OpRegistry KnownQueryFactories = new()
+        internal static OpRegistry KnownQueryFactories = new OpRegistry()
         {
             { TerminalVocabulary.All , JsonLogicOperation.All  },
             { TerminalVocabulary.Some, JsonLogicOperation.Some },
@@ -264,7 +264,7 @@ namespace BlueForest.JsonLogic
 
         internal static Expression ParseStringArray(ref Utf8JsonReader reader)
         {
-            List<string> list = new(8);
+            List<string> list = new List<string>(8);
             do
             {
                 if (reader.TokenType != JsonTokenType.String) throw new JsonLogicException("Array items must be of type string or number.");
@@ -276,7 +276,7 @@ namespace BlueForest.JsonLogic
 
         internal static Expression ParseNumberArray(ref Utf8JsonReader reader)
         {
-            List<double> list = new(8);
+            List<double> list = new List<double>(8);
             do
             {
                 if (reader.TokenType != JsonTokenType.Number) throw new JsonLogicException("Array items must be of type string or number.");
@@ -295,7 +295,7 @@ namespace BlueForest.JsonLogic
             }
 
             string[] parts = propertyName.Split('.');
-            MemberExpression exp = default;
+            Expression exp = default;
             foreach (var e in stack)
             {
                 try
@@ -324,7 +324,11 @@ namespace BlueForest.JsonLogic
             {
                 return exp.EnsureJsonNumber();
             }
-            return exp.Type != typeof(object) ? Expression.Convert(exp, typeof(Object)) : exp;
+            if (exp.Type != typeof(object))
+            {
+                exp = Expression.Convert(exp, typeof(object));
+            }
+            return exp;
         }
 
         internal static MemberExpression GetPropertyOrField(Expression e, string name, JsonLogicOptions options)

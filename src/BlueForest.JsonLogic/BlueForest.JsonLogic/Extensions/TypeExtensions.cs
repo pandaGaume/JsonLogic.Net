@@ -21,20 +21,20 @@ namespace BlueForest.JsonLogic
         }
         internal static bool IsNumericType(this Type t)
         {
-            return Type.GetTypeCode(t) switch
+            switch(Type.GetTypeCode(t))
             {
-                TypeCode.Double or 
-                TypeCode.Int32 or 
-                TypeCode.Single or 
-                TypeCode.Byte or 
-                TypeCode.SByte or 
-                TypeCode.UInt16 or 
-                TypeCode.UInt32 or 
-                TypeCode.UInt64 or 
-                TypeCode.Int16 or 
-                TypeCode.Int64 or 
-                TypeCode.Decimal => true,
-                _ => false,
+                case TypeCode.Double:
+                case TypeCode.Int32:
+                case TypeCode.Single:
+                case TypeCode.Byte:
+                case TypeCode.SByte:
+                case TypeCode.UInt16:
+                case TypeCode.UInt32:
+                case TypeCode.UInt64:
+                case TypeCode.Int16:
+                case TypeCode.Int64:
+                case TypeCode.Decimal: return true;
+                default: return false;
             };
         }
 
@@ -43,6 +43,6 @@ namespace BlueForest.JsonLogic
 
         internal static PropertyInfo? GetPublicInstanceDeclaredOnlyReadProperty(this Type type, string name)
             => type.GetProperties(PublicInstanceDeclaredOnly)
-                .FirstOrDefault(property => property.Name == name && property.GetGetMethod() is not null);
+                .FirstOrDefault(property => property.Name == name && property.GetGetMethod() != null);
     }
 }
