@@ -96,30 +96,35 @@ namespace BlueForest.JsonLogic
         };
 
         public static Delegate Compile(string jsonStr, Type dataType, JsonLogicOptions options = null) => Parse<object>(Encoding.UTF8.GetBytes(jsonStr), dataType, options).Compile();
-
+        public static Delegate Compile<T>(string jsonStr, JsonLogicOptions options = null) => Parse<object>(Encoding.UTF8.GetBytes(jsonStr), typeof(T), options).Compile();
         public static Delegate Compile<ReturnT>(string jsonStr, Type dataType, JsonLogicOptions options = null) => Parse<ReturnT>(Encoding.UTF8.GetBytes(jsonStr), dataType, options).Compile();
-
+        public static Delegate Compile<T,ReturnT>(string jsonStr, JsonLogicOptions options = null) => Parse<ReturnT>(Encoding.UTF8.GetBytes(jsonStr), typeof(T), options).Compile();
         public static Delegate Compile(ReadOnlySpan<byte> jsonData, Type dataType, JsonLogicOptions options = null) => Parse<object>(jsonData, dataType, options).Compile();
-
-        public static Delegate Compile<ReturnT>(ReadOnlySpan<byte> jsonData, Type dataType, JsonLogicOptions options = null)=> Parse<ReturnT>(jsonData, dataType, options).Compile();
+        public static Delegate Compile<T>(ReadOnlySpan<byte> jsonData, JsonLogicOptions options = null) => Parse<object>(jsonData, typeof(T), options).Compile();
+        public static Delegate Compile<ReturnT>(ReadOnlySpan<byte> jsonData, Type dataType, JsonLogicOptions options = null) => Parse<ReturnT>(jsonData, dataType, options).Compile();
+        public static Delegate Compile<T,ReturnT>(ReadOnlySpan<byte> jsonData, JsonLogicOptions options = null) => Parse<ReturnT>(jsonData, typeof(T), options).Compile();
 
         public static LambdaExpression Parse(string jsonStr, Type dataType, JsonLogicOptions options = null)=> Parse<object>(Encoding.UTF8.GetBytes(jsonStr), dataType, options);
 
         public static LambdaExpression Parse<ReturnT>(string jsonStr, Type dataType,JsonLogicOptions options = null)=> Parse<ReturnT>(Encoding.UTF8.GetBytes(jsonStr), dataType, options);
 
         public static LambdaExpression Parse(ReadOnlySpan<byte> jsonData, Type dataType, JsonLogicOptions options = null)=>  Parse<object>(jsonData, dataType, options);
- 
+
         public static LambdaExpression Parse<ReturnT>(ReadOnlySpan<byte> jsonData, Type dataType, JsonLogicOptions options = null)
         {
             var reader = new Utf8JsonReader(jsonData);
             if (!reader.Read()) throw new JsonException();
+            return Parse<ReturnT>(ref reader, dataType, options);
+        }
+        public static LambdaExpression Parse(ref Utf8JsonReader reader, Type dataType, JsonLogicOptions options = null) => Parse<object>(ref reader, dataType, options);
+        public static LambdaExpression Parse<ReturnT>(ref Utf8JsonReader reader, Type dataType, JsonLogicOptions options = null)
+        {
             var stack = new Stack<Expression>(1);
             var dataExpr = Expression.Parameter(dataType ?? typeof(object), "data");
             stack.Push(dataExpr);
             var bodyExpr = Parse(ref reader, stack, options);
             return Expression.Lambda(Expression.Convert(bodyExpr, typeof(ReturnT)), dataExpr);
         }
-
         internal static Expression Parse(ref Utf8JsonReader reader, Stack<Expression> stack, JsonLogicOptions options = null)
         {
             Expression exp = default;
@@ -323,6 +328,10 @@ namespace BlueForest.JsonLogic
             if(exp.IsNumericType())
             {
                 return exp.EnsureJsonNumber();
+            }
+            if (exp.Type.IsArray)
+            {
+                return exp;
             }
             if (exp.Type != typeof(object))
             {

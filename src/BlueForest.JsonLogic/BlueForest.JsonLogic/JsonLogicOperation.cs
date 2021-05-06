@@ -165,12 +165,15 @@ namespace BlueForest.JsonLogic
             var lengthExp = Expression.Property(arrayExpr, typeof(Array).GetPublicInstanceDeclaredOnlyReadProperty(nameof(Array.Length))!);
             var result = Expression.Variable(typeof(bool), "result");
             var label = Expression.Label();
-            var predicate = values[1] as BinaryExpression;
             // Parameter for the catch block
             var exception = Expression.Parameter(typeof(Exception));
+            // note we have to replace all parameters into the underlying expression to reflect the item
+            var itemParameter = Expression.Parameter(etype, "item");
+            ParameterReplacer replacer = new ParameterReplacer(itemParameter);
+            var predicate = replacer.Visit(values[1]);
 
             var expr = Expression.Block(
-                new[] { indexVariable, predicate.Left as ParameterExpression, result },
+                new[] { indexVariable, itemParameter, result },
                 Expression.TryCatch(
                     Expression.Block(
                         Expression.Assign(result, Expression.Constant(true)),
@@ -182,7 +185,7 @@ namespace BlueForest.JsonLogic
                             Expression.IfThenElse(
                                 Expression.LessThan(indexVariable, lengthExp),
                                 Expression.Block(
-                                    Expression.Assign(predicate.Left, Expression.ArrayIndex(arrayExpr, indexVariable)),
+                                    Expression.Assign(itemParameter, Expression.ArrayIndex(arrayExpr, indexVariable)),
 #if DEBUG
                                     ExpressionHelpers.DebugExpression(predicate),
 #endif
@@ -223,12 +226,16 @@ namespace BlueForest.JsonLogic
             var lengthExp = Expression.Property(arrayExpr, typeof(Array).GetPublicInstanceDeclaredOnlyReadProperty(nameof(Array.Length))!);
             var result = Expression.Variable(typeof(bool), "result");
             var label = Expression.Label();
-            var predicate = values[1] as BinaryExpression;
+            // note we have to replace all parameters into the underlying expression to reflect the item
+            var itemParameter = Expression.Parameter(etype, "item");
+            ParameterReplacer replacer = new ParameterReplacer(itemParameter);
+            var predicate = replacer.Visit(values[1]);
+
             // Parameter for the catch block
             var exception = Expression.Parameter(typeof(Exception));
 
             var expr = Expression.Block(
-                new[] { indexVariable, predicate.Left as ParameterExpression, result },
+                new[] { indexVariable, itemParameter, result },
                 Expression.TryCatch(
                     Expression.Block(
                         Expression.Assign(result, Expression.Constant(false)),
@@ -240,7 +247,7 @@ namespace BlueForest.JsonLogic
                             Expression.IfThenElse(
                                 Expression.LessThan(indexVariable, lengthExp),
                                 Expression.Block(
-                                    Expression.Assign(predicate.Left, Expression.ArrayIndex(arrayExpr, indexVariable)),
+                                    Expression.Assign(itemParameter, Expression.ArrayIndex(arrayExpr, indexVariable)),
 #if DEBUG
                                     ExpressionHelpers.DebugExpression(predicate),
 #endif
@@ -329,5 +336,22 @@ namespace BlueForest.JsonLogic
                 ),
                 result);
         }
+    
+    
+       internal class ParameterReplacer : ExpressionVisitor
+       {
+            private ParameterExpression _parameter;
+
+            internal ParameterReplacer(ParameterExpression p)
+            {
+                _parameter = p;
+            }
+
+            protected override Expression VisitParameter(ParameterExpression node)
+            {
+                return _parameter;
+            }
+       }
+    
     }
 }

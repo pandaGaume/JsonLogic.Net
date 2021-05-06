@@ -36,11 +36,14 @@ namespace BlueForest.JsonLogic.Cli
 
     public class TestData
     {
+        string[] _t = { "banana", "orange", "apple" };
         public int Int;
         public float Float { get; set; }
         public double Double;
         public TestData Nested;
         public Location Location;
+
+        public string[] Tags => _t;
     }
     public static class Program
     {
@@ -64,12 +67,12 @@ namespace BlueForest.JsonLogic.Cli
             new TestSample(@"{""min"": [{""var"":""""}]}",ArrayOfDoubles , 1),
             new TestSample(@"{""max"": [{""var"":""""}]}",ArrayOfIntegers , 6),
             new TestSample(@"{""max"": [{""var"":[""""]}]}",ArrayOfIntegers , 6),
-            new TestSample(@"{""some"": [[""banana"", ""orange""],{""=="":[{""var"":""""},""orange""]}]}",null , true),
-            new TestSample(@"{""some"": [[1, 2],{""=="":[{""var"":""""},1]}]}",null , true),
+             new TestSample(@"{""some"": [[1, 2],{""=="":[{""var"":""""},1]}]}",null , true),
             new TestSample(@"{""some"": [[1, 2],{""=="":[{""var"":""""},3]}]}",null , false),
             new TestSample(@"{""some"": [{""var"":""""},{""=="":[{""var"":""""},6]}]}",ArrayOfDoubles , true),
             new TestSample(@"{""all"": [{""var"":""""},{""<="":[{""var"":""""},6]}]}",ArrayOfDoubles , true),
-            new TestSample(@"{""all"": [{""var"":""""},{""<"":[{""var"":""""},4]}]}",ArrayOfDoubles , false)
+            new TestSample(@"{""all"": [{""var"":""""},{""<"":[{""var"":""""},4]}]}",ArrayOfDoubles , false),
+            new TestSample(@"{""some"": [{""var"":""Tags""},{""or"":[{""=="":[{""var"":""""},""kiwi""]},{""=="":[{""var"":""""},""orange""]}]}]}",new TestData() , true),
 
        };
         static void Main(string[] args)
